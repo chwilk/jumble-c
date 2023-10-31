@@ -1,14 +1,19 @@
 package main
 
 import (
-	"net/http"
 	"bufio"
 	"fmt"
+	"html/template"
 	"log"
+	"net/http"
 	"os"
 	"sort"
 	"strings"
 )
+
+type Data struct {
+	Answer string
+}
 
 // Vars that need to be global
 var wordHash map[string][]string
@@ -41,14 +46,26 @@ func readWords(wordFile string) map[string][]string {
 	return wordHash
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
-	guess := "testing"
-	fmt.Fprintf(w, "%s", wordHash[hash(guess)])
+func formHandler(w http.ResponseWriter, r *http.Request) {
+    query := r.FormValue("search")
+	answer:= fmt.Sprintf("%s", wordHash[hash(query)])
+	d := &Data{Answer: answer}
+	t, _ := template.ParseFiles("index.html")
+	t.Execute(w, d)
 }
 
 // Set up a webserver
 func main() {
-	wordHash = readWords("/words")
-    http.HandleFunc("/", handler)
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	// Check environment variables
+	httpPort := os.Getenv("PORT")
+	if httpPort == "" {
+		httpPort = ":8080"
+	}
+	wordFile := os.Getenv("WORDFILE")
+	if wordFile == "" {
+		wordFile = "/words"
+	}
+	wordHash = readWords(wordFile)
+    http.HandleFunc("/", formHandler)
+	log.Fatal(http.ListenAndServe(httpPort, nil))
 }

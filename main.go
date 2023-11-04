@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"cmp"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
@@ -14,6 +15,10 @@ import (
 
 type Data struct {
 	Answer []string
+}
+
+type Health struct {
+	Words int
 }
 
 // Vars that need to be global
@@ -91,6 +96,19 @@ func formHandler(w http.ResponseWriter, r *http.Request) {
 	t.Execute(w, &Data{Answer: deDupe(findAnswers(hash(query)))})
 }
 
+func healthHandler(w http.ResponseWriter, r *http.Request) {
+    health := Health{
+		Words: len(wordHash),
+	}
+	j,_ := json.MarshalIndent(health, "", "  ")
+	if health.Words > 0 {
+		w.WriteHeader(http.StatusOK)
+	} else {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+	fmt.Fprint(w, string(j))
+}
+
 // Set up a webserver
 func main() {
 	// Check environment variables
@@ -105,5 +123,6 @@ func main() {
 	}
 	wordHash = readWords(wordFile)
 	http.HandleFunc("/", formHandler)
+	http.HandleFunc("/health", healthHandler)
 	log.Fatal(http.ListenAndServe(address, nil))
 }

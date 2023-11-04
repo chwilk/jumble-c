@@ -12,7 +12,7 @@ import (
 )
 
 type Data struct {
-	Answer string
+	Answer []string
 }
 
 // Vars that need to be global
@@ -46,12 +46,39 @@ func readWords(wordFile string) map[string][]string {
 	return wordHash
 }
 
+func deDupe(a []string) []string {
+	existList := make(map[string]bool)
+	list := []string{}
+	for _, i := range a {
+		if _, v := existList[i]; !v {
+			existList[i] = true
+			list = append(list, i)
+		}
+	}
+	return list
+}
+
+func findAnswers(query string) []string {
+	answer := wordHash[query]
+	l := len(query)
+	if l > 3 {
+		a := strings.Split(query, "")
+		answer = append(answer, findAnswers(strings.Join(a[1:l], ""))...)
+		for i := 1; i < l-1; i++ {
+			b := make([]string, l-1)
+			copy(b, a[0:i])
+			b = append(b, a[i+1:l]...)
+			answer = append(answer, findAnswers(strings.Join(b, ""))...)
+		}
+		answer = append(answer, findAnswers(strings.Join(a[0:l-1], ""))...)
+	}
+	return answer
+}
+
 func formHandler(w http.ResponseWriter, r *http.Request) {
-    query := r.FormValue("search")
-	answer:= fmt.Sprintf("%s", wordHash[hash(query)])
-	d := &Data{Answer: answer}
+	query := r.FormValue("search")
 	t, _ := template.ParseFiles("index.html")
-	t.Execute(w, d)
+	t.Execute(w, &Data{Answer: deDupe(findAnswers(hash(query)))})
 }
 
 // Set up a webserver
@@ -59,13 +86,14 @@ func main() {
 	// Check environment variables
 	httpPort := os.Getenv("PORT")
 	if httpPort == "" {
-		httpPort = ":8080"
+		httpPort = "8080"
 	}
+	address := fmt.Sprintf("%s:%s", "0.0.0.0", httpPort)
 	wordFile := os.Getenv("WORDFILE")
 	if wordFile == "" {
-		wordFile = "/words"
+		wordFile = "words"
 	}
 	wordHash = readWords(wordFile)
-    http.HandleFunc("/", formHandler)
-	log.Fatal(http.ListenAndServe(httpPort, nil))
+	http.HandleFunc("/", formHandler)
+	log.Fatal(http.ListenAndServe(address, nil))
 }

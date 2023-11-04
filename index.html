@@ -5,10 +5,14 @@
     </head>
     <body>
         <h1>Jumble Solver</h1>
-        <div>{{ .Answer }}</div>
         <form action="/" method="post">
-            <input id="word" type="text" name="search" placeholder="jelmub" size="8">
+            <input id="word" type="text" name="search" placeholder="jelmub" size="8" autofocus>
             <input id="submit" type="submit" name="submit">
         </form>
+        <div><ul>
+        {{range .Answer }}
+            <li>{{ . }}</li>
+        {{end}}
+        </ul></div>
     </body>
 </html>

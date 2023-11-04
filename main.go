@@ -2,12 +2,13 @@ package main
 
 import (
 	"bufio"
+	"cmp"
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"os"
-	"sort"
+	"slices"
 	"strings"
 )
 
@@ -21,7 +22,7 @@ var wordHash map[string][]string
 // Hash function that alphabetizes letters in a word
 func hash(s string) string {
 	a := strings.Split(s, "")
-	sort.Strings(a)
+	slices.Sort(a)
 	return strings.Join(a, "")
 }
 
@@ -55,6 +56,9 @@ func deDupe(a []string) []string {
 			list = append(list, i)
 		}
 	}
+	slices.Sort(list)
+	slices.SortFunc(list,
+		func(a, b string) int { return cmp.Compare(len(b), len(a)) })
 	return list
 }
 

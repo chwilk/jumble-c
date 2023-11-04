@@ -56,9 +56,15 @@ func deDupe(a []string) []string {
 			list = append(list, i)
 		}
 	}
-	slices.Sort(list)
-	slices.SortFunc(list,
-		func(a, b string) int { return cmp.Compare(len(b), len(a)) })
+	comparator := func(a, b string) int {
+		c := cmp.Compare(len(b), len(a))
+		if c == 0 {
+			return cmp.Compare(a, b)
+		} else {
+		    return c
+		}
+	}
+	slices.SortFunc(list, comparator)
 	return list
 }
 
